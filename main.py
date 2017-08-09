@@ -9,6 +9,7 @@ def main(username, password, accountname, repo_slug, email_address, permission="
     """ Send an invitation to join the repository. """
 
     response = {}
+    response["code"] = 400
     response["type"] = "error"
 
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -23,22 +24,28 @@ def main(username, password, accountname, repo_slug, email_address, permission="
             data={"permission": permission},
             headers=headers)
 
+        status_code = result.status_code
+
         if result.status_code == 200:
             result = json.loads(result.text)
+
+            response["type"] = "success"
+            response["data"] = result
         elif result.status_code == 401:
             response["error"] = {}
             response["error"]["message"] = "Authentication failed. "
         elif result.status_code in [400, 404]:
             response["error"] = {}
             response["error"]["message"] = result.text
+
+        response["code"] = status_code
     except requests.exceptions.HTTPError as err:
+        response["code"] = 500
         response["error"] = {}
         response["error"]["message"] = "Failed to connect."
     except Exception as err:
+        response["code"] = 500
         response["error"] = {}
         response["error"]["message"] = str(err)
-    else:
-        response["type"] = "success"
-        response["data"] = result
 
     return response
